@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
+  </head>
+  <body>
+    <h1>Merhaba <%= @user.name %>,</h1>
+    <p>Siparişiniz kargoya verildi! 🎉</p>
+    
+    <h2>Kargo Bilgileri</h2>
+    <p><strong>Sipariş No:</strong> <%= @order.order_number %></p>
+    
+    <% if @shipment %>
+      <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+        <p><strong>Kargo Firması:</strong> <%= @shipment.carrier.upcase %></p>
+        <p><strong>Takip Numarası:</strong> <%= @shipment.tracking_number %></p>
+        
+        <% if @shipment.notes.present? %>
+          <p><strong>Not:</strong> <%= @shipment.notes %></p>
+        <% end %>
+      </div>
+    <% else %>
+      <p>Kargo takip bilgileri yakında sisteme eklenecektir.</p>
+    <% end %>
+    
+    <h3>Sipariş Özeti</h3>
+    <ul>
+      <% @order.order_lines.each do |line| %>
+        <li>
+          <%= line.product.title %> 
+          - <%= line.quantity %> Adet
+        </li>
+      <% end %>
+    </ul>
+    
+    <p>Siparişiniz en kısa sürede size ulaşacaktır.</p>
+  </body>
+</html>

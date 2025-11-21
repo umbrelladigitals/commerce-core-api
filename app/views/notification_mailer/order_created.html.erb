@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
+  </head>
+  <body>
+    <h1>Merhaba <%= @user.name %>,</h1>
+    <p>Siparişiniz başarıyla alındı. Teşekkür ederiz!</p>
+    
+    <h2>Sipariş Detayları</h2>
+    <p><strong>Sipariş No:</strong> <%= @order.order_number %></p>
+    <p><strong>Tarih:</strong> <%= @order.created_at.strftime("%d.%m.%Y %H:%M") %></p>
+    <p><strong>Toplam Tutar:</strong> <%= @order.total.format %></p>
+    
+    <h3>Ürünler</h3>
+    <ul>
+      <% @order.order_lines.each do |line| %>
+        <li>
+          <%= line.product.title %> 
+          <% if line.variant %>
+            (<%= line.variant.display_name %>)
+          <% end %>
+          - <%= line.quantity %> Adet - <%= line.total.format %>
+        </li>
+      <% end %>
+    </ul>
+    
+    <p>Siparişinizin durumunu hesabınızdan takip edebilirsiniz.</p>
+  </body>
+</html>

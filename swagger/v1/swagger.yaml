@@ -1,0 +1,133 @@
+---
+openapi: 3.0.1
+info:
+  title: API V1
+  version: v1
+paths:
+  "/api/v1/catalog/products":
+    get:
+      summary: List all products
+      tags:
+      - Products
+      responses:
+        '200':
+          description: products found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    name:
+                      type: string
+                    description:
+                      type: string
+                    price_cents:
+                      type: integer
+                    currency:
+                      type: string
+                  required:
+                  - id
+                  - name
+                  - price_cents
+    post:
+      summary: Create a product
+      tags:
+      - Products
+      parameters: []
+      responses:
+        '201':
+          description: product created
+        '422':
+          description: invalid request
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                product:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    description:
+                      type: string
+                    price_cents:
+                      type: integer
+                    currency:
+                      type: string
+                  required:
+                  - name
+                  - price_cents
+  "/api/v1/catalog/products/{id}":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    get:
+      summary: Retrieve a product
+      tags:
+      - Products
+      responses:
+        '200':
+          description: product found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  description:
+                    type: string
+                  price_cents:
+                    type: integer
+                  currency:
+                    type: string
+        '404':
+          description: product not found
+    patch:
+      summary: Update a product
+      tags:
+      - Products
+      parameters: []
+      responses:
+        '200':
+          description: product updated
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                product:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    description:
+                      type: string
+                    price_cents:
+                      type: integer
+                    currency:
+                      type: string
+    delete:
+      summary: Delete a product
+      tags:
+      - Products
+      responses:
+        '204':
+          description: product deleted
+servers:
+- url: https://{defaultHost}
+  variables:
+    defaultHost:
+      default: www.example.com
