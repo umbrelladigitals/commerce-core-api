@@ -11,7 +11,7 @@ gem "puma", ">= 5.0"
 gem "aws-sdk-s3", require: false
 
 # Fix nokogiri compatibility issue with Ruby 3.1.0
-gem "nokogiri", "~> 1.16.0"
+gem "nokogiri", "~> 1.18.10"
 
 # Authentication
 gem "devise"
