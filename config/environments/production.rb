@@ -30,7 +30,7 @@ Rails.application.configure do
   # config.action_dispatch.x_sendfile_header = "X-Accel-Redirect" # for NGINX
 
   # Store uploaded files on the local file system (see config/storage.yml for options).
-  config.active_storage.service = :cloudflare
+  config.active_storage.service = :local
 
   # Mount Action Cable outside main process or domain.
   # config.action_cable.mount_path = nil
@@ -42,7 +42,7 @@ Rails.application.configure do
   # config.assume_ssl = true
 
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  config.force_ssl = true
+  config.force_ssl = false
 
   # Skip http-to-https redirect for the default health check endpoint.
   # config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
@@ -95,20 +95,20 @@ Rails.application.configure do
   # ]
   # Skip DNS rebinding protection for the default health check endpoint.
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+
+  # Action Mailer Configuration
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.perform_deliveries = true
+  config.action_mailer.raise_delivery_errors = true
+  config.action_mailer.default_url_options = { host: ENV.fetch('HOST_URL', 'localhost:3000') }
+
+  config.action_mailer.smtp_settings = {
+    address:              ENV.fetch('SMTP_ADDRESS', 'smtp.gmail.com'),
+    port:                 ENV.fetch('SMTP_PORT', 587),
+    domain:               ENV.fetch('SMTP_DOMAIN', 'gmail.com'),
+    user_name:            ENV.fetch('SMTP_USERNAME', ''),
+    password:             ENV.fetch('SMTP_PASSWORD', ''),
+    authentication:       :plain,
+    enable_starttls_auto: true
+  }
 end
-
-# Action Mailer Configuration
-config.action_mailer.delivery_method = :smtp
-config.action_mailer.perform_deliveries = true
-config.action_mailer.raise_delivery_errors = true
-config.action_mailer.default_url_options = { host: ENV.fetch('HOST_URL', 'localhost:3000') }
-
-config.action_mailer.smtp_settings = {
-  address:              ENV.fetch('SMTP_ADDRESS', 'smtp.gmail.com'),
-  port:                 ENV.fetch('SMTP_PORT', 587),
-  domain:               ENV.fetch('SMTP_DOMAIN', 'gmail.com'),
-  user_name:            ENV.fetch('SMTP_USERNAME', ''),
-  password:             ENV.fetch('SMTP_PASSWORD', ''),
-  authentication:       :plain,
-  enable_starttls_auto: true
-}
