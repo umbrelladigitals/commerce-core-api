@@ -16,7 +16,7 @@ Gem::Specification.new do |s|
   s.license               = 'MIT'
 
   s.add_runtime_dependency 'rest-client', '>= 1.8'
-  s.add_development_dependency 'rspec', '~> 3.3.0'
+  s.add_development_dependency 'rspec', '~> 3.13.2'
   s.add_development_dependency 'rspec-rails', '~> 3.3.0'
 
   s.require_paths = ['lib']
