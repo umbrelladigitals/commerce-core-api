@@ -14,7 +14,7 @@ class Shipment < ApplicationRecord
   # delivered: Teslim edildi
   # failed: Teslimat başarısız
   # returned: İade edildi
-  enum status: { 
+  enum :status, { 
     preparing: 0, 
     in_transit: 1, 
     out_for_delivery: 2, 

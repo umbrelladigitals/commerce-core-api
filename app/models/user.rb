@@ -10,10 +10,11 @@ class User < ApplicationRecord
          jwt_revocation_strategy: JwtDenylist
 
   # Enums
-  enum role: { customer: 0, admin: 1, dealer: 2, manufacturer: 3, marketer: 4 }
+  enum :role, { customer: 0, admin: 1, dealer: 2, manufacturer: 3, marketer: 4 }
 
   # Associations
   has_many :orders, class_name: 'Orders::Order', dependent: :destroy
+  has_many :addresses, dependent: :destroy
   
   # B2B Associations (only for dealers)
   has_many :dealer_discounts, class_name: 'B2b::DealerDiscount', foreign_key: :dealer_id, dependent: :destroy

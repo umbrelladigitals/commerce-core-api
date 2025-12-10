@@ -12,20 +12,15 @@ echo ""
 
 # Login and get token
 echo "🔐 Step 1: Login as customer"
-echo "POST ${BASE_URL}/users/sign_in"
-LOGIN_RESPONSE=$(curl -s -i -X POST "${BASE_URL}/users/sign_in" \
+echo "POST http://localhost:3000/login"
+LOGIN_RESPONSE=$(curl -s -4 -X POST "http://localhost:3000/login" \
   -H "Content-Type: application/json" \
-  -d '{
-    "user": {
-      "email": "customer@example.com",
-      "password": "password123"
-    }
-  }')
+  -d '{"user": {"email": "customer@example.com", "password": "password123"}}')
 
-# Extract token from Authorization header
-TOKEN=$(echo "$LOGIN_RESPONSE" | grep -i "^authorization:" | sed 's/authorization: Bearer //i' | tr -d '\r\n ')
+# Extract token from JSON response
+TOKEN=$(echo "$LOGIN_RESPONSE" | jq -r '.token')
 
-if [ -z "$TOKEN" ]; then
+if [ -z "$TOKEN" ] || [ "$TOKEN" == "null" ]; then
   echo "❌ Login failed! Could not get token."
   echo "$LOGIN_RESPONSE"
   exit 1
@@ -128,6 +123,26 @@ if [ ! -z "$ORDER_ID" ] && [ "$ORDER_ID" != "null" ]; then
   
   echo "📧 Check Sidekiq logs for confirmation email!"
   echo "tail -f log/development.log | grep 'SIPARIŞ ONAYI'"
+fi
+
+echo ""
+echo ""
+
+# Test 8: List Orders (Verify Policy)
+echo "📋 Step 9: List My Orders"
+echo "GET ${BASE_URL}/api/v1/orders"
+curl -s "${BASE_URL}/api/v1/orders" \
+  -H "Authorization: Bearer $TOKEN" | jq '.'
+
+echo ""
+echo ""
+
+# Test 9: Show Order (Verify Policy)
+if [ ! -z "$ORDER_ID" ] && [ "$ORDER_ID" != "null" ]; then
+  echo "👁️ Step 10: Show Order Details"
+  echo "GET ${BASE_URL}/api/v1/orders/$ORDER_ID"
+  curl -s "${BASE_URL}/api/v1/orders/$ORDER_ID" \
+    -H "Authorization: Bearer $TOKEN" | jq '.'
 fi
 
 echo ""

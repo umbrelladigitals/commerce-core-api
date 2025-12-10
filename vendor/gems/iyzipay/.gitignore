@@ -1,0 +1,11 @@
+.DS_Store
+.lock
+.rvmrc
+.vimrc
+.redcar
+.bundle
+.rbx
+.idea/
+Gemfile.lock
+.Gemfile.lock
+tags

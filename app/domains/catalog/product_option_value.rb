@@ -17,8 +17,7 @@ module Catalog
     # ============================================================================
     validates :name, presence: true, uniqueness: { scope: :product_option_id }
     validates :price_cents, presence: true, numericality: { 
-      only_integer: true, 
-      greater_than_or_equal_to: 0 
+      only_integer: true
     }
     validates :price_mode, presence: true, inclusion: { 
       in: %w[flat per_unit],

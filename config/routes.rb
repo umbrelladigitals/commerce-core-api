@@ -39,6 +39,8 @@ Rails.application.routes.draw do
       # Cart routes
       resource :cart, only: [:show], controller: 'cart' do
         post :add
+        post :apply_coupon
+        delete :remove_coupon
         get 'checkout/preview', action: :checkout_preview
         post :checkout
         delete :clear
@@ -99,9 +101,18 @@ Rails.application.routes.draw do
       # Bank accounts (public endpoint for payment page)
       resources :bank_accounts, only: [:index]
       
+      # Payments
+      resources :payments, only: [:create] do
+        collection do
+          post :callback
+          post :iyzico_webhook
+        end
+      end
+
       # Users domain
       namespace :users do
         resource :profile, only: [:show, :update], controller: 'profiles'
+        resources :addresses
         post 'change_password', to: 'profiles#change_password'
         patch 'notification_settings', to: 'profiles#update_notification_settings'
       end
@@ -128,6 +139,11 @@ Rails.application.routes.draw do
         get 'dashboard', to: 'dashboard#index'
         resources :customers, only: [:index, :show, :create]
         resources :orders, only: [:index, :show, :create]
+        resources :quotes, only: [:index, :show, :create, :update, :destroy] do
+          member do
+            post :send_quote, path: 'send'
+          end
+        end
       end
 
       # Manufacturer routes (Üretici)
@@ -142,6 +158,8 @@ Rails.application.routes.draw do
 
       # Admin routes
       namespace :admin do
+        post 'uploads', to: 'uploads#create'
+        get 'dashboard/stats', to: 'dashboard#stats'
         # Admin Catalog
         namespace :catalog do
           resources :categories
@@ -184,8 +202,22 @@ Rails.application.routes.draw do
         # Admin Notes
         resources :notes, only: [:index, :show, :create, :update, :destroy]
         
+        # Admin Coupons
+        resources :coupons, only: [:index, :show, :create, :destroy]
+
+        # Admin Shipments
+        resources :shipments, only: [:index, :show, :update]
+
+        # Admin Sliders
+        resources :sliders, only: [:index, :show, :create, :update, :destroy]
+
+        # Admin Pricing
+        namespace :pricing do
+          post 'bulk-upload', to: 'pricing#bulk_upload'
+        end
+
         # Admin Users
-        resources :users, only: [:index, :show, :update, :destroy] do
+        resources :users, only: [:index, :show, :create, :update, :destroy] do
           member do
             post :add_balance
           end

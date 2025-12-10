@@ -53,21 +53,31 @@ module Orders
         subtotal = calculate_subtotal
         
         # Dealer indirimini hesapla
-        discount = calculate_dealer_discount_total
+        dealer_discount = calculate_dealer_discount_total
+
+        # Kupon indirimini hesapla (Dealer indiriminden sonraki tutar üzerinden mi? Yoksa subtotal üzerinden mi? Genelde subtotal)
+        # Ancak kümülatif indirim olmaması için dealer indiriminden kalana uygulamak daha güvenli olabilir.
+        # Şimdilik subtotal üzerinden uygulayalım ama toplam indirim subtotal'i geçemez.
+        coupon_discount = calculate_coupon_discount(subtotal)
         
+        total_discount = dealer_discount + coupon_discount
+        
+        # İndirim toplam tutarı geçemez
+        total_discount = subtotal if total_discount > subtotal
+
         # Kargo ücretini hesapla (indirimden sonraki tutara göre)
-        shipping = calculate_shipping(subtotal - discount)
+        shipping = calculate_shipping(subtotal - total_discount)
         
         # Vergiyi hesapla (ara toplam - indirim + kargo üzerinden)
-        tax = calculate_tax(subtotal - discount + shipping)
+        tax = calculate_tax(subtotal - total_discount + shipping)
         
         # Genel toplamı hesapla
-        total = subtotal - discount + shipping + tax
+        total = subtotal - total_discount + shipping + tax
         
         # Siparişi güncelle
         order.update_columns(
           subtotal_cents: subtotal,
-          discount_cents: discount,
+          discount_cents: total_discount,
           shipping_cents: shipping,
           tax_cents: tax,
           total_cents: total,
@@ -81,10 +91,14 @@ module Orders
     # Sadece hesapla, kaydetme (önizleme için)
     def preview
       subtotal = calculate_subtotal
-      shipping = calculate_shipping(subtotal)
-      discount_total = calculate_dealer_discount_total
-      tax = calculate_tax(subtotal + shipping - discount_total)
-      total = subtotal + shipping - discount_total + tax
+      dealer_discount = calculate_dealer_discount_total
+      coupon_discount = calculate_coupon_discount(subtotal)
+      total_discount = dealer_discount + coupon_discount
+      total_discount = subtotal if total_discount > subtotal
+
+      shipping = calculate_shipping(subtotal - total_discount)
+      tax = calculate_tax(subtotal + shipping - total_discount)
+      total = subtotal + shipping - total_discount + tax
       
       result = {
         subtotal_cents: subtotal,
@@ -95,6 +109,8 @@ module Orders
         tax: Money.new(tax, order.currency).format,
         total_cents: total,
         total: Money.new(total, order.currency).format,
+        discount_cents: total_discount,
+        discount: Money.new(total_discount, order.currency).format,
         currency: order.currency,
         items_count: order.order_lines.sum(:quantity),
         free_shipping: shipping.zero?
@@ -104,9 +120,18 @@ module Orders
       if dealer?
         result.merge!(
           is_dealer: true,
-          dealer_discount_cents: discount_total,
-          dealer_discount: Money.new(discount_total, order.currency).format,
+          dealer_discount_cents: dealer_discount,
+          dealer_discount: Money.new(dealer_discount, order.currency).format,
           dealer_balance: user.dealer_balance&.summary
+        )
+      end
+
+      # Kupon bilgisi ekle
+      if order.coupon
+        result.merge!(
+          coupon_code: order.coupon.code,
+          coupon_discount_cents: coupon_discount,
+          coupon_discount: Money.new(coupon_discount, order.currency).format
         )
       end
       
@@ -152,6 +177,14 @@ module Orders
       end
       
       total_discount
+    end
+
+    # Kupon indirimini hesapla
+    def calculate_coupon_discount(amount_cents)
+      return 0 unless order.coupon
+      return 0 unless order.coupon.applicable?(order)
+      
+      order.coupon.calculate_discount(amount_cents)
     end
   end
 end

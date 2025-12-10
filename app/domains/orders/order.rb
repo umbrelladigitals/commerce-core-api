@@ -7,6 +7,7 @@ module Orders
     # İlişkiler
     belongs_to :user, optional: true # Guest checkout için optional
     belongs_to :created_by_marketer, class_name: 'User', optional: true
+    belongs_to :coupon, class_name: 'Promotions::Coupon', optional: true
     has_many :order_lines, dependent: :destroy
     has_many :products, through: :order_lines
     has_many :status_logs, class_name: 'OrderStatusLog', dependent: :destroy
@@ -26,14 +27,14 @@ module Orders
     # paid: Ödeme alındı, işleme hazır
     # shipped: Kargoya verildi
     # cancelled: İptal edildi
-    enum status: { cart: 0, paid: 1, shipped: 2, cancelled: 3, pending: 4 }
+    enum :status, { cart: 0, paid: 1, shipped: 2, cancelled: 3, pending: 4 }
     
     # Üretim durumları (Manufacturing için)
     # pending: Üretim bekliyor
     # in_production: Üretimde
     # ready: Hazır, sevkiyat bekliyor
     # shipped: Sevk edildi
-    enum production_status: { pending: 'pending', in_production: 'in_production', ready: 'ready', shipped: 'shipped' }, _prefix: true
+    enum :production_status, { pending: 'pending', in_production: 'in_production', ready: 'ready', shipped: 'shipped' }, prefix: true
     
     # Validasyonlar
     validates :status, presence: true
@@ -49,6 +50,7 @@ module Orders
     after_initialize :set_default_status, if: :new_record?
     before_save :calculate_totals, if: :order_lines_changed?
     after_commit :enqueue_status_notification, if: :saved_change_to_status?
+    after_commit :check_production_status_change, if: :saved_change_to_production_status?
     
     # Sipariş numarası oluştur (örn: ORD-20231010-001)
     def order_number
@@ -88,7 +90,8 @@ module Orders
       update!(
         status: :paid, 
         paid_at: Time.current,
-        payment_status: :completed
+        payment_status: :completed,
+        production_status: :in_production
       )
     end
     
@@ -96,7 +99,8 @@ module Orders
     def mark_as_pending!
       update!(
         status: :pending,
-        payment_status: :pending
+        payment_status: :pending,
+        production_status: :pending
       )
     end
     
@@ -173,8 +177,43 @@ module Orders
       # Don't send notification for cart status
       return if to_status == 'cart'
       
-      # Enqueue job to send notification
-      OrderStatusChangedJob.perform_later(id, from_status, to_status)
+      # Enqueue job to send notification (safely - don't fail if Redis is down)
+      begin
+        OrderStatusChangedJob.perform_later(id, from_status, to_status)
+      rescue RedisClient::CannotConnectError, Redis::CannotConnectError, Errno::ECONNREFUSED => e
+        Rails.logger.warn "Could not enqueue OrderStatusChangedJob: #{e.message}"
+      end
+    end
+
+    def check_production_status_change
+      if production_status == 'in_production'
+        create_hepsijet_shipment
+      end
+    end
+
+    def create_hepsijet_shipment
+      # Hepsijet Entegrasyonu - Üretime alındığında barkod oluştur
+      begin
+        hepsijet_service = Services::HepsijetService.new
+        if hepsijet_service.enabled?
+          # Check if shipment already exists with hepsijet
+          return if shipment&.carrier == 'hepsijet' && shipment&.tracking_number.present?
+
+          barcode = hepsijet_service.create_shipment(self)
+          if barcode
+            shipment_record = shipment || build_shipment
+            shipment_record.assign_attributes(
+              carrier: 'hepsijet',
+              tracking_number: barcode,
+              status: :preparing
+            )
+            shipment_record.save!
+          end
+        end
+      rescue => e
+        Rails.logger.error "Hepsijet integration error: #{e.message}"
+        # Entegrasyon hatası sipariş durumunu engellememeli
+      end
     end
   end
 end

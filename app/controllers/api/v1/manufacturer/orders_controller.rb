@@ -158,6 +158,14 @@ module Api
             production_status: order.production_status,
             status: order.status,
             items_count: order.order_lines.sum(:quantity),
+            order_lines: order.order_lines.includes(:product, :variant).map do |line|
+              {
+                id: line.id,
+                product_name: line.product&.title,
+                quantity: line.quantity,
+                product_options: line.variant&.options&.map { |k, v| { option_name: k, value_name: v } } || []
+              }
+            end,
             total: format_money(order.total),
             created_at: order.created_at.iso8601,
             updated_at: order.updated_at.iso8601

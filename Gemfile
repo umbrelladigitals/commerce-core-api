@@ -1,7 +1,7 @@
 source "https://rubygems.org"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem "rails", "~> 7.2.2", ">= 7.2.2.2"
+gem "rails", "~> 8.0"
 # Use postgresql as the database for Active Record
 gem "pg", "~> 1.1"
 # Use the Puma web server [https://github.com/puma/puma]
@@ -9,9 +9,6 @@ gem "puma", ">= 5.0"
 
 # Cloud Storage (Cloudflare R2 / AWS S3)
 gem "aws-sdk-s3", require: false
-
-# Fix nokogiri compatibility issue with Ruby 3.1.0
-gem "nokogiri", "~> 1.16.0"
 
 # Authentication
 gem "devise"
@@ -37,6 +34,12 @@ gem "rswag-ui"
 
 # CORS
 gem "rack-cors"
+
+# Payment Gateway
+gem "iyzipay", path: "vendor/gems/iyzipay"
+
+# Environment variables
+gem "dotenv-rails", groups: [:development, :test]
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ mswin mswin64 mingw x64_mingw jruby ]

@@ -22,7 +22,7 @@ class Quote < ApplicationRecord
   # accepted: Kabul edildi (siparişe dönüştü)
   # rejected: Reddedildi
   # expired: Süresi doldu
-  enum status: { draft: 0, sent: 1, accepted: 2, rejected: 3, expired: 4 }
+  enum :status, { draft: 0, sent: 1, accepted: 2, rejected: 3, expired: 4 }
   
   # Validasyonlar
   validates :quote_number, presence: true, uniqueness: true

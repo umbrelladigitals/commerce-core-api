@@ -197,8 +197,8 @@ module Api
               order_lines: order.order_lines.map do |line|
                 {
                   id: line.id,
-                  product_name: line.product.name,
-                  variant_name: line.variant&.name,
+                  product_name: line.product.title,
+                  variant_name: line.variant&.display_name,
                   sku: line.variant&.sku || line.product.sku,
                   quantity: line.quantity,
                   price: format_money(line.price_cents),

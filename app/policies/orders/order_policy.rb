@@ -10,17 +10,11 @@ module Orders
     end
 
     def show?
-      Rails.logger.info "===== ORDER POLICY DEBUG ====="
-      Rails.logger.info "User: #{user.inspect}"
-      Rails.logger.info "Order ID: #{record.id}, Order user_id: #{record.user_id}"
-      Rails.logger.info "User present: #{user.present?}"
-      
       return false unless user # Guest users can't view orders without authentication
       
-      allowed = user.admin? || record.user_id == user.id
-      Rails.logger.info "Authorization result: #{allowed}"
-      
-      allowed
+      user.admin? || 
+      record.user_id == user.id || 
+      (user.marketer? && record.created_by_marketer_id == user.id)
     end
 
     def create?
@@ -46,6 +40,8 @@ module Orders
       def resolve
         if user.admin?
           scope.all
+        elsif user.marketer?
+          scope.where('user_id = ? OR created_by_marketer_id = ?', user.id, user.id)
         else
           scope.where(user_id: user.id)
         end

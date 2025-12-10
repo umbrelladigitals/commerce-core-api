@@ -28,7 +28,7 @@ module B2b
     monetize :amount_cents, as: :amount
     
     # İşlem tipleri
-    enum transaction_type: {
+    enum :transaction_type, {
       credit: 'credit',           # Genel kredi ekleme
       debit: 'debit',             # Genel borç düşme
       topup: 'topup',             # Manuel bakiye yükleme

@@ -23,6 +23,8 @@ module Api
               items_count: @cart.order_lines.count,
               total_quantity: @cart.total_items,
               subtotal: preview[:subtotal],
+              discount: preview[:discount],
+              coupon_code: preview[:coupon_code],
               shipping: preview[:shipping],
               tax: preview[:tax],
               total: preview[:total],
@@ -88,11 +90,61 @@ module Api
         variant = params[:variant_id].present? ? ::Catalog::Variant.find(params[:variant_id]) : nil
         quantity = params[:quantity]&.to_i || 1
         
-        # Aynı ürün/variant zaten sepette var mı?
-        existing_line = @cart.order_lines.find_by(
-          product_id: product.id,
-          variant_id: variant&.id
-        )
+        # Process options
+        selected_options = []
+        if params[:options].present? && params[:options].is_a?(Array)
+          params[:options].each do |opt_param|
+            value_id = opt_param[:value_id] || opt_param['value_id']
+            next unless value_id
+            
+            opt_value = ::Catalog::ProductOptionValue.find_by(id: value_id)
+            next unless opt_value
+            
+            selected_options << {
+              option_id: opt_value.product_option_id,
+              option_name: opt_value.product_option.name,
+              value_id: opt_value.id,
+              value_name: opt_value.name,
+              price_cents: opt_value.price_cents,
+              price_currency: opt_value.price.currency.iso_code
+            }
+          end
+        end
+        
+        # Sort options to ensure consistent comparison
+        selected_options.sort_by! { |o| o[:option_id] }
+        
+        # Try to find variant from options if not provided
+        if variant.nil? && selected_options.any?
+          # Construct options hash for comparison
+          options_hash = selected_options.each_with_object({}) do |opt, hash|
+            hash[opt[:option_name]] = opt[:value_name]
+          end
+          
+          # Find matching variant
+          # We look for a variant whose options are a subset of selected_options
+          # e.g. Variant: {Color: Red}, Selected: {Color: Red, Wrap: Yes} -> Match!
+          variant = product.variants.find do |v|
+            v.options.present? && v.options.all? { |k, val| options_hash[k] == val }
+          end
+          
+          if variant
+            # If variant found, we need to zero out the prices of options that are part of the variant
+            # to avoid double counting (assuming variant price includes them)
+            selected_options.each do |opt|
+              if variant.options.key?(opt[:option_name])
+                opt[:price_cents] = 0
+              end
+            end
+          end
+        end
+
+        # Aynı ürün/variant ve AYNI OPSİYONLAR zaten sepette var mı?
+        existing_line = @cart.order_lines.to_a.find do |line|
+          line.product_id == product.id &&
+          line.variant_id == variant&.id &&
+          line.selected_options == selected_options.as_json
+        end
         
         begin
           if existing_line
@@ -106,7 +158,8 @@ module Api
               product: product,
               variant: variant,
               quantity: quantity,
-              note: params[:note]
+              note: params[:note],
+              selected_options: selected_options
             )
           end
           
@@ -342,7 +395,8 @@ module Api
           shipping_address: params[:shipping_address],
           billing_address: params[:billing_address],
           notes: params[:notes],
-          use_different_billing: params[:use_different_billing]
+          use_different_billing: params[:use_different_billing],
+          card_details: params[:card_details]
         }
         
         service = ::Orders::CheckoutService.new(@cart, checkout_params)
@@ -408,6 +462,31 @@ module Api
           error: 'Ödeme başlatılamadı', 
           details: e.message 
         }, status: :unprocessable_entity
+      end
+      
+      # POST /api/cart/apply_coupon
+      def apply_coupon
+        code = params[:code]
+        coupon = Promotions::Coupon.active.find_by(code: code)
+        
+        if coupon
+          if coupon.applicable?(@cart)
+            @cart.update!(coupon: coupon)
+            ::Orders::OrderPriceCalculator.new(@cart).calculate!
+            render json: { message: 'Kupon uygulandı', discount: coupon.value }
+          else
+            render json: { error: 'Kupon bu sepet için geçerli değil' }, status: :unprocessable_entity
+          end
+        else
+          render json: { error: 'Geçersiz kupon kodu' }, status: :not_found
+        end
+      end
+      
+      # DELETE /api/cart/remove_coupon
+      def remove_coupon
+        @cart.update!(coupon: nil)
+        ::Orders::OrderPriceCalculator.new(@cart).calculate!
+        render json: { message: 'Kupon kaldırıldı' }
       end
       
       private

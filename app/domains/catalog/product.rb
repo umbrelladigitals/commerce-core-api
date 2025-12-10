@@ -43,7 +43,13 @@ module Catalog
     # Scopes
     scope :active, -> { where(active: true) }
     scope :inactive, -> { where(active: false) }
-    scope :in_category, ->(category_id) { where(category_id: category_id) }
+    scope :in_category, ->(category_id) {
+      category = Catalog::Category.find_by(id: category_id)
+      return none unless category
+      
+      category_ids = [category.id] + category.descendants.map(&:id)
+      where(category_id: category_ids)
+    }
     scope :search, ->(query) { where('title ILIKE ? OR description ILIKE ?', "%#{query}%", "%#{query}%") }
     scope :with_stock, -> { joins(:variants).where('variants.stock > 0').distinct }
 

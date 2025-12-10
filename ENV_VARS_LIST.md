@@ -34,6 +34,13 @@ Bildirim sisteminin çalışması için gereklidir.
 *   `R2_BUCKET_NAME`: Bucket adı.
 *   `R2_ENDPOINT`: S3 API Endpoint URL (örn: `https://<account_id>.r2.cloudflarestorage.com`).
 
+## Ödeme Sistemi (Iyzico)
+*   `IYZICO_API_KEY`: Iyzico API Anahtarı.
+*   `IYZICO_SECRET_KEY`: Iyzico Gizli Anahtar.
+*   `IYZICO_BASE_URL`: Iyzico API Adresi (Sandbox veya Production).
+    *   Sandbox: `https://sandbox-api.iyzipay.com`
+    *   Production: `https://api.iyzipay.com`
+
 ## Opsiyonel / Gelecek İçin
 *   `RAILS_LOG_TO_STDOUT`: `true` (Logları standart çıktıya yönlendirir, konteyner yapılarında önerilir).
 *   `RAILS_SERVE_STATIC_FILES`: `true` (Eğer Nginx/Apache arkasında değilse ve Rails statik dosyaları sunacaksa).

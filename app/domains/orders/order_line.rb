@@ -68,11 +68,23 @@ module Orders
     
     # Fiyatları ayarla (variant varsa onun fiyatı, yoksa product'ın)
     def set_prices
-      self.unit_price_cents ||= if variant.present?
+      base_price = if variant.present?
         variant.price_cents
       else
         product.price_cents
       end
+
+      # Seçilen opsiyonların fiyatlarını ekle
+      options_price = 0
+      if selected_options.present? && selected_options.is_a?(Array)
+        selected_options.each do |opt|
+          if opt['price_cents'].present?
+            options_price += opt['price_cents'].to_i
+          end
+        end
+      end
+
+      self.unit_price_cents = base_price + options_price
     end
     
     # Toplam fiyatı hesapla

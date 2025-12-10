@@ -102,7 +102,7 @@ module Orders
   def build_user_basket
     basket_items = @order.order_lines.map do |line|
       [
-        line.product.name,                    # Ürün adı
+        line.product.title,                    # Ürün adı
         (line.price.cents / 100.0).to_s,     # Ürün fiyatı (TL)
         line.quantity                         # Adet
       ]

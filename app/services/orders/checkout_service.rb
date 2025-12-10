@@ -162,7 +162,7 @@ module Orders
       order.notes = params[:notes] if params[:notes].present?
       
       # Ödeme yöntemini kaydet
-      order.payment_method = params[:payment_method] || 'credit_card'
+      order.payment_method = params[:payment_method]
       
       # Stokları rezerve et
       reserve_stock!
@@ -179,44 +179,62 @@ module Orders
     
     # Ödeme işlemini yap
     def process_payment
-      method = params[:payment_method] || 'credit_card'
+      method = params[:payment_method]
       
       case method
-      when 'credit_card', 'paytr'
-        process_credit_card_payment
+      when 'iyzico'
+        process_iyzico_payment
       when 'dealer_balance'
         process_dealer_balance_payment
       when 'bank_transfer'
         process_bank_transfer_payment
-      when 'cash_on_delivery'
-        process_cash_on_delivery_payment
       else
         { success: false, errors: ['Desteklenmeyen ödeme yöntemi'] }
       end
     end
-    
-    # Kredi kartı / PayTR ödemesi
-    def process_credit_card_payment
-      paytr_service = PaytrService.new(order)
-      payment_response = paytr_service.create_payment_token
-      
-      unless payment_response[:success]
-        return {
-          success: false,
-          errors: [payment_response[:error]]
+
+    # Iyzico ödemesi
+    def process_iyzico_payment
+      if params[:card_details].present?
+        # Direct Payment
+        service = Payment::IyzicoService.new
+        result = service.process_direct_payment(order, params[:card_details])
+        
+        # Iyzico response check - status is the main indicator
+        if result['status'] == 'success'
+          order.mark_as_paid!
+          order.update!(
+            payment_method: 'iyzico_direct',
+            metadata: order.metadata.merge(iyzico_payment_id: result['paymentId'])
+          )
+          
+          {
+            success: true,
+            order: order.reload,
+            payment_method: 'iyzico_direct',
+            message: 'Ödeme başarıyla alındı'
+          }
+        else
+          {
+            success: false,
+            errors: [result['errorMessage'] || 'Ödeme başarısız']
+          }
+        end
+      else
+        # Sipariş oluşturuldu, ödeme frontend tarafında başlatılacak (Hosted/Modal)
+        # Iyzico formunu burada initialize etmiyoruz, frontend ayrı bir istek atacak
+        # VEYA burada initialize edip html_content dönebiliriz.
+        # Mevcut frontend yapısı (IyzicoPaymentForm) ayrı bir istek atıyor (/api/v1/payments).
+        # Bu yüzden burada sadece siparişi dönüyoruz.
+        
+        {
+          success: true,
+          order: order,
+          payment_method: 'iyzico',
+          payment_provider: 'iyzico',
+          next_step: 'redirect_to_payment'
         }
       end
-      
-      {
-        success: true,
-        order: order,
-        payment_provider: 'paytr',
-        payment_data: {
-          token: payment_response[:token],
-          iframe_url: payment_response[:iframe_url]
-        },
-        next_step: 'redirect_to_payment'
-      }
     end
     
     # Dealer bakiyesi ile ödeme (B2B)
@@ -276,38 +294,11 @@ module Orders
       }
     end
     
-    # Kapıda ödeme
-    def process_cash_on_delivery_payment
-      # Kapıda ödeme sadece belirli tutarın altında olabilir
-      max_amount = 500_00 # 500 TL
-      
-      if order.total_cents > max_amount
-        return {
-          success: false,
-          errors: ["Kapıda ödeme maksimum #{Money.new(max_amount, order.currency).format} ile sınırlıdır"]
-        }
-      end
-      
-      order.mark_as_pending!
-      
-      order.update!(
-        payment_method: 'cash_on_delivery'
-      )
-      
-      {
-        success: true,
-        order: order.reload,
-        payment_method: 'cash_on_delivery',
-        message: 'Sipariş alındı. Ödemeyi kargo teslim alırken yapabilirsiniz'
-      }
-    end
-    
     # Mevcut ödeme yöntemleri
     def available_payment_methods
       methods = [
-        { id: 'credit_card', name: 'Kredi Kartı / Banka Kartı', enabled: true },
-        { id: 'bank_transfer', name: 'Havale / EFT', enabled: true },
-        { id: 'cash_on_delivery', name: 'Kapıda Ödeme', enabled: order.total_cents <= 500_00 }
+        { id: 'iyzico', name: 'Kredi Kartı ile Öde (Iyzico)', enabled: true },
+        { id: 'bank_transfer', name: 'Havale / EFT', enabled: true }
       ]
       
       # Dealer ise bakiye ile ödeme seçeneği ekle (guest users için skip)
@@ -334,7 +325,7 @@ module Orders
     
     # Ödeme yöntemi geçerli mi?
     def valid_payment_method?(method)
-      %w[credit_card paytr dealer_balance bank_transfer cash_on_delivery].include?(method)
+      %w[iyzico dealer_balance bank_transfer].include?(method)
     end
     
     # Havale talimatları

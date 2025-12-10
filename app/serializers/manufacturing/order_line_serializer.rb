@@ -11,8 +11,8 @@ module Manufacturing
       {
         id: @order_line.id,
         quantity: @order_line.quantity,
-        product_name: @order_line.product&.name,
-        variant_name: @order_line.variant&.name,
+        product_name: @order_line.product&.title,
+        variant_name: @order_line.variant&.display_name,
         created_at: @order_line.created_at,
         updated_at: @order_line.updated_at,
         product: product_data,
@@ -29,7 +29,7 @@ module Manufacturing
       return nil unless @order_line.product
       {
         id: @order_line.product.id,
-        name: @order_line.product.name,
+        name: @order_line.product.title,
         sku: @order_line.product.sku
       }
     end
@@ -38,7 +38,7 @@ module Manufacturing
       return nil unless @order_line.variant
       {
         id: @order_line.variant.id,
-        name: @order_line.variant.name,
+        name: @order_line.variant.display_name,
         sku: @order_line.variant.sku
       }
     end

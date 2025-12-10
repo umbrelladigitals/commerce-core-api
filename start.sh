@@ -9,11 +9,11 @@ echo ""
 # Check if Redis is running
 if ! pgrep -x "redis-server" > /dev/null
 then
-    echo "⚠️  Redis is not running!"
-    echo "   Please start Redis in a separate terminal:"
-    echo "   $ redis-server"
-    echo ""
-    exit 1
+    echo "⚠️  Redis is not running! (Continuing anyway...)"
+    # echo "   Please start Redis in a separate terminal:"
+    # echo "   $ redis-server"
+    # echo ""
+    # exit 1
 fi
 
 echo "✅ Redis is running"

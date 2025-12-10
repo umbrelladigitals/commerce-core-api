@@ -8,7 +8,7 @@ module Api
         before_action :set_order, only: [:show, :update, :cancel]
 
         def index
-          @orders = current_user.orders.where.not(status: :cart).order(created_at: :desc)
+          @orders = policy_scope(::Orders::Order).where.not(status: :cart).order(created_at: :desc)
           
           render json: {
             data: @orders.map do |order|
@@ -130,12 +130,15 @@ module Api
         end
 
         def set_order
-          # Admin tüm siparişleri görebilir, diğer kullanıcılar sadece kendi siparişlerini
-          if current_user.admin?
-            @order = ::Orders::Order.find(params[:id])
-          else
-            @order = current_user.orders.find(params[:id])
+          if params[:id].to_s.match?(/^\d+$/)
+            @order = policy_scope(::Orders::Order).find_by(id: params[:id])
+          elsif params[:id].to_s.start_with?('ORD-')
+            # Extract ID from ORD-YYYYMMDD-000000
+            id = params[:id].split('-').last.to_i
+            @order = policy_scope(::Orders::Order).find_by(id: id)
           end
+          
+          raise ActiveRecord::RecordNotFound unless @order
         rescue ActiveRecord::RecordNotFound
           render json: { error: 'Sipariş bulunamadı veya erişim izniniz yok' }, status: :not_found
         end
