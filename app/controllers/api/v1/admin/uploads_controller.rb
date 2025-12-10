@@ -14,7 +14,7 @@ module Api
             )
             
             render json: { 
-              url: blob.url,
+              url: Rails.application.routes.url_helpers.rails_blob_url(blob, host: request.base_url),
               signed_id: blob.signed_id,
               filename: blob.filename.to_s,
               content_type: blob.content_type

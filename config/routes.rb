@@ -79,6 +79,7 @@ Rails.application.routes.draw do
     # Shipment (Kargo) routes
     scope :shipment do
       get '/', to: 'shipment#index', as: :shipments
+      post 'guest_track', to: 'shipment#guest_track'
       get ':id', to: 'shipment#show', as: :shipment
       post 'create', to: 'shipment#create'
       patch ':id/update_status', to: 'shipment#update_status', as: :update_shipment_status

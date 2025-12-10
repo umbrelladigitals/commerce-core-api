@@ -4,11 +4,28 @@ module Api
   # Kargo takip API controller'ı
   # Kargo gönderimi oluşturma ve takip işlemleri
   class ShipmentController < ApplicationController
-    before_action :authenticate_user!
+    before_action :authenticate_user!, except: [:guest_track]
     before_action :set_shipment, only: [:show, :update_status, :track, :cancel]
     before_action :require_admin_for_create!, only: [:create]
     before_action :require_admin_or_owner!, only: [:show, :track]
     
+    # POST /api/shipment/guest_track
+    # Misafir kullanıcılar için kargo takibi
+    def guest_track
+      order = ::Orders::Order.find_by(order_number: params[:order_number])
+      
+      if order && order.email == params[:email]
+        @shipment = Shipment.find_by(order_id: order.id)
+        if @shipment
+           render json: { data: serialize_shipment(@shipment, include_order: true) }
+        else
+           render json: { error: 'Sipariş için kargo kaydı bulunamadı' }, status: :not_found
+        end
+      else
+        render json: { error: 'Sipariş numarası veya e-posta hatalı' }, status: :not_found
+      end
+    end
+
     # GET /api/shipment
     # Kullanıcının kargo listesi
     def index
