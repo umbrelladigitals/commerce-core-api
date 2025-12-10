@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_09_231500) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_10_223000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -287,6 +287,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_09_231500) do
     t.string "sku"
     t.string "sku_prefix"
     t.string "slug"
+    t.string "tags", default: [], array: true
     t.decimal "tax_rate", precision: 5, scale: 4, default: "0.2"
     t.string "title"
     t.datetime "updated_at", null: false

@@ -151,7 +151,7 @@ module Api
             images: product.images.attached? ? product.images.map { |img| url_for(img) } : [],
             tax_rate: product.tax_rate&.to_f,
             featured: product.featured || false,
-            tags: [],
+            tags: product.tags || [],
             meta_title: product.meta_title,
             meta_description: product.meta_description,
             created_at: product.created_at.iso8601,
