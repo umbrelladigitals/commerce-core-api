@@ -8,13 +8,22 @@ module Api
         def bulk_upload
           file = params[:file]
           if file.present?
-            # TODO: Implement actual file processing logic here
-            # Example: PricingImportService.new(file).process
+            service = PricingImportService.new(file)
+            results = service.process
             
-            render json: {
-              status: 'success',
-              message: 'Fiyat listesi başarıyla yüklendi ve işleme alındı.'
-            }
+            if results[:error_count] > 0 && results[:success_count] == 0
+              render json: {
+                status: 'error',
+                message: 'İşlem sırasında hatalar oluştu',
+                details: results
+              }, status: :unprocessable_entity
+            else
+              render json: {
+                status: 'success',
+                message: "#{results[:success_count]} ürün güncellendi. #{results[:error_count]} hata oluştu.",
+                details: results
+              }
+            end
           else
             render json: {
               status: 'error',

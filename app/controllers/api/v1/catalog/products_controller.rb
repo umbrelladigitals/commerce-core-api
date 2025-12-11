@@ -14,6 +14,7 @@ module Api
           # Apply filters
           products_query = products_query.in_category(params[:category_id]) if params[:category_id].present?
           products_query = products_query.search(params[:q]) if params[:q].present?
+          products_query = products_query.discounted if params[:sale] == 'true' || params[:discounted] == 'true'
           
           # Pagination
           page = params[:page].to_i > 0 ? params[:page].to_i : 1

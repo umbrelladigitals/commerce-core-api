@@ -39,6 +39,10 @@ Rails.application.configure do
   config.action_mailer.perform_caching = false
 
   config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
+  
+  # Active Storage URL options
+  config.active_storage.service_urls_expire_in = 1.hour
+  Rails.application.routes.default_url_options[:host] = 'localhost:3000'
 
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
@@ -75,4 +79,7 @@ Rails.application.configure do
 
   # Allow ngrok hosts
   config.hosts << /.*\.ngrok-free\.app/
+
+  # Use async adapter for development to avoid Redis dependency
+  config.active_job.queue_adapter = :async
 end

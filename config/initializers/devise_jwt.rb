@@ -2,7 +2,12 @@
 
 Devise.setup do |config|
   config.jwt do |jwt|
-    jwt.secret = Rails.application.credentials.devise_jwt_secret_key || ENV['DEVISE_JWT_SECRET_KEY']
+    secret = begin
+      Rails.application.credentials.devise_jwt_secret_key
+    rescue StandardError
+      nil
+    end
+    jwt.secret = secret || ENV['DEVISE_JWT_SECRET_KEY'] || 'temporary_secret_for_migration_fix'
     jwt.dispatch_requests = [
       ['POST', %r{^/login$}],
       ['POST', %r{^/signup$}]

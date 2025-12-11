@@ -21,9 +21,11 @@ module Catalog
             currency: @product.currency,
             formatted: format_money(@product.price_cents, @product.currency)
           },
+          base_price_cents: @product.base_price_cents,
           active: @product.active,
           in_stock: @product.in_stock?,
           total_stock: @product.total_stock,
+          images: @product.images.attached? ? @product.images.map { |image| Rails.application.routes.url_helpers.url_for(image) } : [],
           created_at: @product.created_at,
           updated_at: @product.updated_at
         },

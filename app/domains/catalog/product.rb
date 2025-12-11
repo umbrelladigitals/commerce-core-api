@@ -52,6 +52,7 @@ module Catalog
     }
     scope :search, ->(query) { where('title ILIKE ? OR description ILIKE ?', "%#{query}%", "%#{query}%") }
     scope :with_stock, -> { joins(:variants).where('variants.stock > 0').distinct }
+    scope :discounted, -> { where('price_cents < base_price_cents') }
 
     # Cache key
     def self.cache_key_with_version

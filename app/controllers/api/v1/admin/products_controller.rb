@@ -56,6 +56,16 @@ module Api
           @product = ::Catalog::Product.new(product_params)
           
           if @product.save
+            # Handle initial stock for simple products
+            stock_value = params[:stock] || params.dig(:product, :stock)
+            if stock_value.present? && @product.variants.empty?
+               @product.variants.create!(
+                 sku: @product.sku,
+                 price_cents: @product.price_cents,
+                 stock: stock_value.to_i
+               )
+            end
+
             render json: serialize_product(@product, detailed: true), status: :created
           else
             render json: { errors: @product.errors.full_messages }, status: :unprocessable_entity
@@ -64,6 +74,29 @@ module Api
 
         # PATCH/PUT /api/v1/admin/products/:id
         def update
+          # Handle quick stock update
+          stock_value = params[:stock] || params.dig(:product, :stock)
+
+          if stock_value.present?
+            stock_val = stock_value.to_i
+            
+            # If product has variants, update the first one (usually the main one for simple products)
+            variant = @product.variants.first
+            
+            if variant
+              variant.update(stock: stock_val)
+            elsif @product.variants.empty?
+               # Create a default variant if none exists
+               @product.variants.create!(
+                 sku: @product.sku,
+                 price_cents: @product.price_cents,
+                 stock: stock_val
+               )
+            end
+            
+            @product.reload
+          end
+
           if @product.update(product_params)
             render json: serialize_product(@product, detailed: true)
           else
@@ -109,7 +142,7 @@ module Api
             :meta_description,
             tags: [],
             images: [],
-            variants_attributes: [:id, :sku, :price_cents, :stock, :active, :_destroy, options: {}],
+            variants_attributes: [:id, :sku, :price_cents, :stock, :_destroy, options: {}],
             product_options_attributes: [
               :id, :name, :option_type, :required, :position, :_destroy,
               product_option_values_attributes: [:id, :name, :price_cents, :price_mode, :position, :_destroy]
@@ -148,7 +181,7 @@ module Api
             category_id: product.category_id,
             category_name: product.category&.name,
             brand: product.brand,
-            images: product.images.attached? ? product.images.map { |img| url_for(img) } : [],
+            images: product.images.attached? ? product.images.map { |img| { url: url_for(img), signed_id: img.signed_id } } : [],
             tax_rate: product.tax_rate&.to_f,
             featured: product.featured || false,
             tags: product.tags || [],
