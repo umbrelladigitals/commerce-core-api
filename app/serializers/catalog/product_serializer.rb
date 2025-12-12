@@ -25,7 +25,7 @@ module Catalog
           active: @product.active,
           in_stock: @product.in_stock?,
           total_stock: @product.total_stock,
-          images: @product.images.attached? ? @product.images.map { |image| Rails.application.routes.url_helpers.url_for(image) } : [],
+          images: @product.images.attached? ? @product.images.map { |image| Rails.application.routes.url_helpers.polymorphic_url(image, host: ENV.fetch('HOST_URL', 'localhost:3000')) } : [],
           created_at: @product.created_at,
           updated_at: @product.updated_at
         },

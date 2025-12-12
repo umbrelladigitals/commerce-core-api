@@ -102,6 +102,9 @@ Rails.application.configure do
   config.action_mailer.raise_delivery_errors = true
   config.action_mailer.default_url_options = { host: ENV.fetch('HOST_URL', 'localhost:3000') }
 
+  # Default URL options for all URL generation
+  config.action_controller.default_url_options = { host: ENV.fetch('HOST_URL', 'localhost:3000') }
+
   config.action_mailer.smtp_settings = {
     address:              ENV.fetch('SMTP_ADDRESS', 'smtp.gmail.com'),
     port:                 ENV.fetch('SMTP_PORT', 587),

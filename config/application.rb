@@ -40,5 +40,8 @@ module CommerceCoreApi
     config.session_store :cookie_store, key: '_commerce_core_api_session'
     config.middleware.use ActionDispatch::Cookies
     config.middleware.use config.session_store, config.session_options
+
+    # Default URL options for URL generation (ActiveStorage, etc.)
+    config.action_controller.default_url_options = { host: ENV.fetch('HOST_URL', 'localhost:3000') }
   end
 end
