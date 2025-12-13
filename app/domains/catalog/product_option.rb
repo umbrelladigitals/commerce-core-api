@@ -5,10 +5,11 @@ module Catalog
     # ============================================================================
     # Associations
     # ============================================================================
-    belongs_to :product
+    belongs_to :product, inverse_of: :product_options
     has_many :product_option_values, -> { order(position: :asc) },
              class_name: 'Catalog::ProductOptionValue',
              foreign_key: :product_option_id,
+             inverse_of: :product_option,
              dependent: :destroy
 
     # ============================================================================

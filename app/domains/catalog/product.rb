@@ -19,6 +19,7 @@ module Catalog
     has_many :order_items, class_name: 'Orders::OrderItem', dependent: :restrict_with_error
     has_many :product_options, -> { order(position: :asc) }, 
              class_name: 'Catalog::ProductOption', 
+             inverse_of: :product,
              dependent: :destroy
     has_many :product_option_values, through: :product_options
     has_many :reviews, dependent: :destroy
