@@ -1093,3 +1093,16 @@ end
 **Hazırlayan:** Commerce Core API Team  
 **Tarih:** Ekim 2025  
 **Durum:** ✅ Production Ready
+
+## 🔄 Shared Options (Yeniden Kullanılabilir Seçenekler)
+
+Aralık 2025 güncellemesi ile birlikte, ürün seçeneklerini tek bir yerden yönetip ürünlere kopyalayabileceğiniz "Shared Options" sistemi eklendi.
+
+### Özellikler
+- **Merkezi Yönetim**: Seçenek şablonları oluşturun (örn: "Standart Bedenler").
+- **Kolay Uygulama**: Tek bir API çağrısı ile şablonu ürüne kopyalayın.
+- **Bağımsızlık**: Kopyalandıktan sonra ürün üzerindeki seçenek, şablondan bağımsız hale gelir. Şablon değişse bile mevcut ürünler etkilenmez.
+
+### Kullanım
+1. `/api/v1/admin/shared_options` üzerinden şablon oluşturun.
+2. `/api/v1/admin/products/:id/product_options/import_shared` ile ürüne uygulayın.

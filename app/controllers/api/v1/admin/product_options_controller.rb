@@ -102,6 +102,39 @@ module Api
           end
         end
 
+        # POST /api/v1/admin/products/:product_id/product_options/import_shared
+        def import_shared
+          shared_option = SharedOption.find(params[:shared_option_id])
+          
+          ActiveRecord::Base.transaction do
+            @product_option = @product.product_options.create!(
+              name: shared_option.name,
+              option_type: shared_option.option_type,
+              required: shared_option.required,
+              position: shared_option.position
+            )
+            
+            shared_option.values.each do |val|
+              @product_option.values.create!(
+                name: val.name,
+                price_cents: val.price_cents,
+                price_mode: val.price_mode,
+                position: val.position
+              )
+            end
+          end
+
+          render json: {
+            success: true,
+            message: "Shared option imported successfully",
+            data: @product_option.as_json_api
+          }, status: :created
+        rescue ActiveRecord::RecordInvalid => e
+          render json: { success: false, errors: e.record.errors.full_messages }, status: :unprocessable_entity
+        rescue ActiveRecord::RecordNotFound
+          render json: { success: false, error: 'Shared option not found' }, status: :not_found
+        end
+
         private
 
         def set_product

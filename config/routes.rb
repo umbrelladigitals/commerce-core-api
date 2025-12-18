@@ -172,8 +172,14 @@ Rails.application.routes.draw do
             member do
               patch :reorder
             end
+            collection do
+              post :import_shared
+            end
           end
         end
+
+        # Shared Options
+        resources :shared_options
 
         resources :product_options, only: [] do
           resources :values, controller: 'product_option_values', only: [:index, :show, :create, :update, :destroy] do

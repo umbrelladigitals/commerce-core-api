@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_10_223000) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_18_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -389,6 +389,28 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_10_223000) do
     t.index ["key"], name: "index_settings_on_key", unique: true
   end
 
+  create_table "shared_option_values", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.integer "position", default: 0
+    t.integer "price_cents", default: 0, null: false
+    t.string "price_mode", default: "flat", null: false
+    t.bigint "shared_option_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["shared_option_id", "name"], name: "index_shared_option_values_on_shared_option_id_and_name", unique: true
+    t.index ["shared_option_id"], name: "index_shared_option_values_on_shared_option_id"
+  end
+
+  create_table "shared_options", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.string "option_type", default: "select", null: false
+    t.integer "position", default: 0
+    t.boolean "required", default: false, null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_shared_options_on_name", unique: true
+  end
+
   create_table "shipments", force: :cascade do |t|
     t.string "carrier", null: false
     t.datetime "created_at", null: false
@@ -487,6 +509,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_10_223000) do
   add_foreign_key "quotes", "users", column: "created_by_id"
   add_foreign_key "reviews", "products"
   add_foreign_key "reviews", "users"
+  add_foreign_key "shared_option_values", "shared_options"
   add_foreign_key "shipments", "orders"
   add_foreign_key "variants", "products"
 end

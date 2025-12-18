@@ -83,6 +83,50 @@ categories_data.each do |cat_data|
 end
 
 # ============================================================================
+# 2.5. SHARED OPTIONS
+# ============================================================================
+shared_options_data = [
+  {
+    name: 'Logo Baskı',
+    option_type: 'select',
+    position: 1,
+    values: [
+      { name: 'Baskısız', price_cents: 0, price_mode: 'flat', position: 1 },
+      { name: 'Tek Yön Baskı', price_cents: 15000, price_mode: 'flat', position: 2 }, # 150 TL
+      { name: 'Çift Yön Baskı', price_cents: 25000, price_mode: 'flat', position: 3 }, # 250 TL
+      { name: 'Varak Yaldız', price_cents: 35000, price_mode: 'flat', position: 4 }   # 350 TL
+    ]
+  },
+  {
+    name: 'Menü Boyutları',
+    option_type: 'select',
+    position: 2,
+    values: [
+      { name: 'A4 (21x29.7cm)', price_cents: 5000, price_mode: 'flat', position: 1 }, # +50 TL
+      { name: 'A5 (14.8x21cm)', price_cents: 0, price_mode: 'flat', position: 2 },
+      { name: 'Kare (21x21cm)', price_cents: 2000, price_mode: 'flat', position: 3 },  # +20 TL
+      { name: 'Özel Boyut', price_cents: 10000, price_mode: 'flat', position: 4 }      # +100 TL
+    ]
+  }
+]
+
+shared_options_data.each do |opt_data|
+  shared_option = SharedOption.find_or_initialize_by(name: opt_data[:name])
+  shared_option.option_type = opt_data[:option_type]
+  shared_option.position = opt_data[:position]
+  shared_option.save!
+
+  opt_data[:values].each do |val_data|
+    value = shared_option.values.find_or_initialize_by(name: val_data[:name])
+    value.price_cents = val_data[:price_cents]
+    value.price_mode = val_data[:price_mode]
+    value.position = val_data[:position]
+    value.save!
+  end
+  puts "🎨 Shared Option checked/created: #{shared_option.name}"
+end
+
+# ============================================================================
 # 3. PRODUCTS WITH OPTIONS (CONSOLIDATED)
 # ============================================================================
 products_definitions = [
