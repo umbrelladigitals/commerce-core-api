@@ -209,50 +209,37 @@ module Api
         
         def serialize_quote(quote, include_lines: false, include_notes: false)
           data = {
-            type: 'quotes',
-            id: quote.id.to_s,
-            attributes: {
-              quote_number: quote.quote_number,
-              status: quote.status,
-              valid_until: quote.valid_until,
-              expired: quote.expired?,
-              active: quote.active?,
-              notes: quote.notes,
-              total: quote.total.format,
-              subtotal: quote.subtotal.format,
-              tax: quote.tax.format,
-              shipping: quote.shipping.format,
-              currency: quote.currency,
-              items_count: quote.quote_lines.count,
-              total_quantity: quote.total_items,
-              created_at: quote.created_at,
-              updated_at: quote.updated_at
+            id: quote.id,
+            quote_number: quote.quote_number,
+            status: quote.status,
+            valid_until: quote.valid_until,
+            expired: quote.expired?,
+            active: quote.active?,
+            notes: quote.notes,
+            total: quote.total.format,
+            subtotal: quote.subtotal.format,
+            tax: quote.tax.format,
+            shipping: quote.shipping.format,
+            currency: quote.currency,
+            items_count: quote.quote_lines.count,
+            total_quantity: quote.total_items,
+            created_at: quote.created_at,
+            updated_at: quote.updated_at,
+            user: {
+              id: quote.user.id,
+              name: quote.user.name,
+              email: quote.user.email,
+              role: quote.user.role
             },
-            relationships: {
-              user: {
-                data: { type: 'users', id: quote.user_id.to_s }
-              },
-              created_by: {
-                data: { type: 'users', id: quote.created_by_id.to_s }
-              }
-            },
-            included: {
-              user: {
-                id: quote.user.id,
-                name: quote.user.name,
-                email: quote.user.email,
-                role: quote.user.role
-              },
-              created_by: {
-                id: quote.created_by.id,
-                name: quote.created_by.name,
-                email: quote.created_by.email
-              }
+            created_by: {
+              id: quote.created_by.id,
+              name: quote.created_by.name,
+              email: quote.created_by.email
             }
           }
           
           if include_lines
-            data[:included][:quote_lines] = quote.quote_lines.map do |line|
+            data[:quote_lines] = quote.quote_lines.map do |line|
               {
                 id: line.id,
                 product_id: line.product_id,
@@ -268,7 +255,7 @@ module Api
           end
           
           if include_notes
-            data[:included][:admin_notes] = quote.admin_notes.recent.map do |note|
+            data[:admin_notes] = quote.admin_notes.recent.map do |note|
               {
                 id: note.id,
                 note: note.note,

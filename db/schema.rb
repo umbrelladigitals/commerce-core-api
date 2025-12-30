@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_18_000000) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_30_183725) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -162,6 +162,21 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_18_000000) do
     t.index ["name", "channel"], name: "index_notification_templates_on_name_and_channel", unique: true
   end
 
+  create_table "notifications", force: :cascade do |t|
+    t.string "action"
+    t.bigint "actor_id", null: false
+    t.datetime "created_at", null: false
+    t.jsonb "data"
+    t.bigint "notifiable_id", null: false
+    t.string "notifiable_type", null: false
+    t.datetime "read_at"
+    t.bigint "recipient_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["actor_id"], name: "index_notifications_on_actor_id"
+    t.index ["notifiable_type", "notifiable_id"], name: "index_notifications_on_notifiable"
+    t.index ["recipient_id"], name: "index_notifications_on_recipient_id"
+  end
+
   create_table "order_items", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "currency"
@@ -283,6 +298,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_18_000000) do
     t.text "meta_description"
     t.string "meta_title"
     t.integer "price_cents"
+    t.jsonb "properties", default: {}
     t.text "short_description"
     t.string "sku"
     t.string "sku_prefix"
@@ -293,6 +309,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_18_000000) do
     t.datetime "updated_at", null: false
     t.index ["active"], name: "index_products_on_active"
     t.index ["category_id"], name: "index_products_on_category_id"
+    t.index ["properties"], name: "index_products_on_properties", using: :gin
     t.index ["sku"], name: "index_products_on_sku", unique: true
     t.index ["slug"], name: "index_products_on_slug", unique: true
   end
@@ -452,6 +469,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_18_000000) do
     t.boolean "email_notifications", default: true
     t.string "encrypted_password", default: "", null: false
     t.string "name"
+    t.jsonb "notification_preferences", default: {}
     t.string "phone"
     t.datetime "remember_created_at"
     t.datetime "reset_password_sent_at"
@@ -489,6 +507,8 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_18_000000) do
   add_foreign_key "dealer_discounts", "users", column: "dealer_id"
   add_foreign_key "notification_logs", "notification_templates"
   add_foreign_key "notification_logs", "users"
+  add_foreign_key "notifications", "users", column: "actor_id"
+  add_foreign_key "notifications", "users", column: "recipient_id"
   add_foreign_key "order_items", "orders"
   add_foreign_key "order_items", "products"
   add_foreign_key "order_lines", "orders"

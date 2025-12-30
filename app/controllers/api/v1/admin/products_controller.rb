@@ -142,6 +142,7 @@ module Api
             :meta_description,
             tags: [],
             images: [],
+            properties: {},
             variants_attributes: [:id, :sku, :price_cents, :stock, :_destroy, options: {}],
             product_options_attributes: [
               :id, :name, :option_type, :required, :position, :_destroy,
@@ -185,6 +186,7 @@ module Api
             tax_rate: product.tax_rate&.to_f,
             featured: product.featured || false,
             tags: product.tags || [],
+            properties: product.properties || {},
             meta_title: product.meta_title,
             meta_description: product.meta_description,
             created_at: product.created_at.iso8601,

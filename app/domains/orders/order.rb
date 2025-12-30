@@ -166,8 +166,17 @@ module Orders
     end
     
     def calculate_totals
-      # Bu method OrderPriceCalculator servis tarafından çağrılacak
-      # Manuel hesaplama yapılmaması için boş bırakıldı
+      # Calculate subtotal from lines
+      self.subtotal_cents = order_lines.sum { |line| line.total_cents || 0 }
+      
+      # Calculate tax
+      self.tax_cents = order_lines.sum do |line|
+        rate = line.product&.tax_rate || 0.20
+        (line.total_cents.to_i * rate).round
+      end
+
+      # Total = Subtotal + Tax + Shipping
+      self.total_cents = subtotal_cents + tax_cents + (shipping_cents || 0)
     end
     
     def enqueue_status_notification

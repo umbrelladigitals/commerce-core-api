@@ -403,6 +403,20 @@ module Api
         result = service.process
         
         if result[:success]
+          # Notify admins about new order
+          actor = current_user || @newly_created_user || result[:order].user
+          if actor
+            NotificationService.notify_admins(
+              actor: actor,
+              action: 'created_order',
+              notifiable: result[:order],
+              data: {
+                message: "Yeni sipariş alındı: ##{result[:order].order_number}",
+                link: "/admin/orders/#{result[:order].id}"
+              }
+            )
+          end
+
           # Clear cart session after successful checkout
           # This ensures a new cart is created for next order
           session.delete(:guest_cart_id)

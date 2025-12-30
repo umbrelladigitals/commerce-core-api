@@ -6,6 +6,49 @@ module Api
       class NotificationsController < Api::V1::BaseController
         before_action :authenticate_user!
         before_action :authorize_admin!
+
+        # GET /api/v1/admin/notifications
+        def index
+          @notifications = Notification.where(recipient: current_user).recent.page(params[:page]).per(20)
+          
+          render json: {
+            data: @notifications.map { |n| serialize_notification(n) },
+            meta: {
+              unread_count: Notification.where(recipient: current_user).unread.count,
+              total_pages: @notifications.total_pages,
+              current_page: @notifications.current_page
+            }
+          }
+        end
+
+        # PUT /api/v1/admin/notifications/:id/read
+        def mark_as_read
+          @notification = Notification.where(recipient: current_user).find(params[:id])
+          @notification.mark_as_read!
+          render json: { message: 'Notification marked as read' }
+        end
+
+        # PUT /api/v1/admin/notifications/read_all
+        def mark_all_as_read
+          Notification.where(recipient: current_user).unread.update_all(read_at: Time.current)
+          render json: { message: 'All notifications marked as read' }
+        end
+        
+        # GET /api/v1/admin/notifications/preferences
+        def get_preferences
+          render json: {
+            data: current_user.notification_preferences || {}
+          }
+        end
+        
+        # PUT /api/v1/admin/notifications/preferences
+        def update_preferences
+          current_user.update!(notification_preferences: params[:preferences])
+          render json: {
+            message: 'Preferences updated',
+            data: current_user.notification_preferences
+          }
+        end
         
         # POST /api/v1/admin/notifications/send
         # Toplu bildirim gönderimi
@@ -150,6 +193,20 @@ module Api
           end
           
           recipients
+        end
+
+        def serialize_notification(notification)
+          {
+            id: notification.id,
+            actor: notification.actor.name,
+            action: notification.action,
+            notifiable_type: notification.notifiable_type,
+            notifiable_id: notification.notifiable_id,
+            data: notification.data,
+            read_at: notification.read_at,
+            created_at: notification.created_at,
+            time_ago: ActionController::Base.helpers.time_ago_in_words(notification.created_at)
+          }
         end
         
         def serialize_log(log)

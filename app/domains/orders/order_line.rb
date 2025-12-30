@@ -21,7 +21,7 @@ module Orders
     validate :sufficient_stock
     
     # Callback'ler
-    before_validation :set_prices, if: :new_record?
+    before_validation :set_prices, if: -> { new_record? || selected_options_changed? }
     before_validation :calculate_total
     after_save :update_order_totals
     after_destroy :update_order_totals
@@ -74,22 +74,39 @@ module Orders
         product.price_cents
       end
 
-      # Seçilen opsiyonların fiyatlarını ekle
-      options_price = 0
+      # Seçilen opsiyonların fiyatlarını ekle (Sadece per_unit olanlar birim fiyata eklenir)
+      per_unit_options_price = 0
+      
       if selected_options.present? && selected_options.is_a?(Array)
         selected_options.each do |opt|
-          if opt['price_cents'].present?
-            options_price += opt['price_cents'].to_i
+          # Varsayılan olarak per_unit kabul et
+          mode = opt['price_mode'] || 'per_unit'
+          
+          if mode == 'per_unit' && opt['price_cents'].present?
+            per_unit_options_price += opt['price_cents'].to_i
           end
         end
       end
 
-      self.unit_price_cents = base_price + options_price
+      self.unit_price_cents = base_price + per_unit_options_price
     end
     
     # Toplam fiyatı hesapla
     def calculate_total
-      self.total_cents = unit_price_cents * quantity if unit_price_cents && quantity
+      return unless unit_price_cents && quantity
+      
+      # Flat (tek seferlik) ücretleri hesapla
+      flat_options_price = 0
+      
+      if selected_options.present? && selected_options.is_a?(Array)
+        selected_options.each do |opt|
+          if opt['price_mode'] == 'flat' && opt['price_cents'].present?
+            flat_options_price += opt['price_cents'].to_i
+          end
+        end
+      end
+
+      self.total_cents = (unit_price_cents * quantity) + flat_options_price
     end
     
     # Variant product'a ait mi kontrol et

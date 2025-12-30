@@ -6,7 +6,7 @@ module Api
       class QuotesController < ApplicationController
         before_action :authenticate_user!
         before_action :require_marketer!
-        before_action :set_quote, only: [:show, :update, :destroy]
+        before_action :set_quote, only: [:show, :update, :destroy, :send_quote, :update_status]
 
         # GET /api/v1/marketer/quotes
         def index
@@ -70,6 +70,17 @@ module Api
               @quote.send(:calculate_totals)
             end
             
+            # Notify admins
+            NotificationService.notify_admins(
+              actor: current_user,
+              action: 'created_quote',
+              notifiable: @quote,
+              data: {
+                message: "#{current_user.name} yeni bir teklif oluşturdu: ##{@quote.quote_number}",
+                link: "/admin/quotes/#{@quote.id}"
+              }
+            )
+            
             render json: {
               message: 'Teklif başarıyla oluşturuldu',
               data: serialize_quote(@quote, include_lines: true)
@@ -112,6 +123,47 @@ module Api
           else
             render json: {
               error: 'Güncelleme başarısız',
+              details: @quote.errors.full_messages
+            }, status: :unprocessable_entity
+          end
+        end
+
+        # POST /api/v1/marketer/quotes/:id/send
+        def send_quote
+          if @quote.status == 'draft'
+            @quote.update!(status: :sent)
+            
+            # Notify customer (TODO: Email integration)
+            
+            render json: {
+              message: 'Teklif gönderildi',
+              data: serialize_quote(@quote)
+            }
+          else
+            render json: { error: 'Sadece taslak teklifler gönderilebilir' }, status: :unprocessable_entity
+          end
+        end
+
+        # PATCH /api/v1/marketer/quotes/:id/status
+        def update_status
+          new_status = params[:status]
+          
+          unless ['accepted', 'rejected'].include?(new_status)
+            return render json: { error: 'Geçersiz durum' }, status: :unprocessable_entity
+          end
+          
+          if @quote.status != 'sent'
+            return render json: { error: 'Sadece gönderilmiş tekliflerin durumu değiştirilebilir' }, status: :unprocessable_entity
+          end
+          
+          if @quote.update(status: new_status)
+            render json: {
+              message: "Teklif #{new_status == 'accepted' ? 'kabul edildi' : 'reddedildi'}",
+              data: serialize_quote(@quote)
+            }
+          else
+            render json: {
+              error: 'Durum güncellenemedi',
               details: @quote.errors.full_messages
             }, status: :unprocessable_entity
           end

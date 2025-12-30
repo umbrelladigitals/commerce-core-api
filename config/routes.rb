@@ -143,6 +143,7 @@ Rails.application.routes.draw do
         resources :quotes, only: [:index, :show, :create, :update, :destroy] do
           member do
             post :send_quote, path: 'send'
+            patch :update_status, path: 'status'
           end
         end
       end
@@ -192,10 +193,18 @@ Rails.application.routes.draw do
         # Notifications
         resources :notification_templates
         
-        namespace :notifications do
-          post :send, to: 'notifications#send_bulk'
-          get :logs, to: 'notifications#logs'
-          get 'logs/:id', to: 'notifications#show_log'
+        resources :notifications, only: [:index] do
+          collection do
+            post :send, to: 'notifications#send_bulk'
+            get :logs, to: 'notifications#logs'
+            get 'logs/:id', to: 'notifications#show_log'
+            put :read_all, to: 'notifications#mark_all_as_read'
+            get :preferences, to: 'notifications#get_preferences'
+            put :preferences, to: 'notifications#update_preferences'
+          end
+          member do
+            put :read, to: 'notifications#mark_as_read'
+          end
         end
         
         # Reviews
@@ -219,9 +228,7 @@ Rails.application.routes.draw do
         resources :sliders, only: [:index, :show, :create, :update, :destroy]
 
         # Admin Pricing
-        namespace :pricing do
-          post 'bulk-upload', to: 'pricing#bulk_upload'
-        end
+        post 'pricing/bulk-upload', to: 'pricing#bulk_upload'
 
         # Admin Users
         resources :users, only: [:index, :show, :create, :update, :destroy] do
